@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Butterfly Tenergy — FH × BH Pairing Matrix</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0f;
+    --bg2: #141417;
+    --bg3: #1c1c21;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0ede8;
+    --muted: #7a7870;
+    --dim: #44433f;
+    --accent: #e8c87a;
+    --accent2: #c4a84a;
+
+    --spin:    #4a88c8;
+    --speed:   #3aaa78;
+    --balance: #c8903a;
+    --control: #9060b8;
+    --power:   #c84848;
+
+    --spin-bg:    rgba(74,136,200,0.12);
+    --speed-bg:   rgba(58,170,120,0.12);
+    --balance-bg: rgba(200,144,58,0.12);
+    --control-bg: rgba(144,96,184,0.12);
+    --power-bg:   rgba(200,72,72,0.12);
+  }
+
+  html { font-size: 16px; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ─────────────────────────────────────── */
+  header {
+    padding: 3rem 3rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .header-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.8rem, 6vw, 5rem);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--text);
+  }
+  .header-logo span {
+    color: var(--accent);
+  }
+  .header-sub {
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.4rem;
+    font-family: 'DM Mono', monospace;
+  }
+  .header-meta {
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 2;
+  }
+  .header-meta strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* ── LAYOUT ─────────────────────────────────────── */
+  main { padding: 2rem 3rem 4rem; max-width: 1400px; margin: 0 auto; }
+
+  /* ── LEGEND ─────────────────────────────────────── */
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+    align-items: center;
+  }
+  .legend-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-right: 0.5rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text);
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 2px;
+    border: 1px solid transparent;
+    transition: border-color 0.2s, background 0.2s;
+    user-select: none;
+  }
+  .legend-item:hover { background: var(--bg3); }
+  .legend-item.active { border-color: var(--border2); }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── CONTROLS ───────────────────────────────────── */
+  .controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+    align-items: center;
+  }
+  .ctrl-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-right: 0.25rem;
+  }
+  .ctrl-btn {
+    font-size: 0.72rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.05em;
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .ctrl-btn:hover { border-color: var(--border2); color: var(--text); }
+  .ctrl-btn.active { border-color: var(--accent2); color: var(--accent); background: rgba(200,168,74,0.07); }
+
+  /* ── MATRIX ─────────────────────────────────────── */
+  .matrix-section {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0;
+    margin-bottom: 2rem;
+  }
+  .fh-axis-label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+    padding-right: 12px;
+    flex-shrink: 0;
+  }
+  .matrix-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; }
+  .col-label-cell {
+    width: 54px;
+    min-width: 54px;
+    vertical-align: bottom;
+    padding-bottom: 8px;
+    text-align: center;
+  }
+  .col-label-inner {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 0.68rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    white-space: nowrap;
+    display: inline-block;
+    height: 88px;
+    line-height: 1;
+    padding-bottom: 2px;
+    transition: color 0.2s;
+  }
+  .corner-cell {
+    min-width: 108px;
+    width: 108px;
+    vertical-align: bottom;
+    padding-bottom: 8px;
+    padding-right: 8px;
+    text-align: right;
+  }
+  .corner-inner {
+    font-size: 0.62rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--dim);
+    line-height: 1.4;
+  }
+  .row-label-cell {
+    min-width: 108px;
+    width: 108px;
+    padding-right: 10px;
+    text-align: right;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  .row-label-inner {
+    font-size: 0.72rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    transition: color 0.2s;
+  }
+  .row-dot {
+    width: 8px; height: 8px;
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+  .cell {
+    width: 54px; min-width: 54px;
+    height: 54px;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    position: relative;
+    transition: border-color 0.15s, opacity 0.2s;
+  }
+  .cell:hover { border-color: rgba(255,255,255,0.3); z-index: 2; }
+  .cell.selected { border-color: var(--accent) !important; z-index: 3; }
+  .cell.dimmed { opacity: 0.1; }
+  .cell-inner {
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.62rem;
+    font-family: 'DM Mono', monospace;
+    color: rgba(255,255,255,0.3);
+    transition: background 0.15s;
+  }
+  .cell:hover .cell-inner { background: rgba(255,255,255,0.03); }
+  .same-gem { font-size: 0.9rem; }
+  .bh-axis-row td {
+    padding-top: 6px;
+    text-align: center;
+  }
+
+  /* ── DETAIL PANEL ───────────────────────────────── */
+  .detail-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    padding: 1.5rem 2rem;
+    min-height: 160px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 0.5rem;
+  }
+  .detail-left {}
+  .detail-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+    line-height: 1.1;
+  }
+  .detail-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 1rem;
+  }
+  .tag {
+    font-size: 0.65rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    padding: 3px 10px;
+    border-radius: 2px;
+    border: 1px solid;
+    text-transform: uppercase;
+  }
+  .detail-desc {
+    font-size: 0.85rem;
+    color: rgba(240,237,232,0.7);
+    line-height: 1.75;
+    font-weight: 300;
+  }
+  .detail-right {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    justify-content: center;
+  }
+  .rubber-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 0.85rem 1rem;
+  }
+  .rubber-card-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .rubber-card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .rubber-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .stat-bar-wrap { flex: 1; }
+  .stat-label {
+    font-size: 0.6rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    margin-bottom: 3px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .stat-bar {
+    height: 3px;
+    background: var(--border2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .stat-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  .rubber-note {
+    font-size: 0.72rem;
+    color: rgba(240,237,232,0.5);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+  .detail-ask-btn {
+    margin-top: 1rem;
+    font-size: 0.72rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    padding: 8px 18px;
+    border: 1px solid var(--accent2);
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s;
+    display: inline-block;
+  }
+  .detail-ask-btn:hover { background: rgba(200,168,74,0.1); }
+
+  .placeholder {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dim);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+  }
+
+  /* ── BH AXIS ────────────────────────────────────── */
+  .bh-axis-label {
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+
+  /* ── FOOTER ─────────────────────────────────────── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--dim);
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  /* ── RESPONSIVE ─────────────────────────────────── */
+  @media (max-width: 900px) {
+    header, main { padding: 1.5rem; }
+    .detail-panel { grid-template-columns: 1fr; gap: 1rem; }
+    .matrix-section { grid-template-columns: 1fr; }
+    .fh-axis-label { display: none; }
+  }
+  @media (max-width: 600px) {
+    .header-meta { display: none; }
+    main { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="header-logo">Butterfly <span>Tenergy</span></div>
+    <div class="header-sub">Forehand × Backhand Pairing Matrix</div>
+  </div>
+  <div class="header-meta">
+    <div><strong>10</strong> rubbers in series</div>
+    <div><strong>100</strong> FH × BH combinations</div>
+    <div>Spring Sponge Technology</div>
+    <div>High Tension · Made in Japan</div>
+  </div>
+</header>
+
+<main>
+  <div class="legend" id="legend">
+    <span class="legend-label">Style →</span>
+  </div>
+
+  <div class="controls">
+    <span class="ctrl-label">Filter FH →</span>
+    <button class="ctrl-btn active" data-style="all">All</button>
+    <button class="ctrl-btn" data-style="spin">Spin</button>
+    <button class="ctrl-btn" data-style="speed">Speed</button>
+    <button class="ctrl-btn" data-style="balance">Balance</button>
+    <button class="ctrl-btn" data-style="control">Control / FX</button>
+    <button class="ctrl-btn" data-style="power">Power Spin</button>
+  </div>
+
+  <div class="matrix-section">
+    <div class="fh-axis-label">Forehand Rubber</div>
+    <div>
+      <div class="matrix-wrap">
+        <table id="matrix-table"></table>
+      </div>
+      <div class="bh-axis-label">← Backhand Rubber →</div>
+    </div>
+  </div>
+
+  <div class="detail-panel" id="detail-panel">
+    <div class="placeholder">Select any cell to view pairing details</div>
+  </div>
+</main>
+
+<footer>
+  <span>Butterfly Tenergy Series — All rubbers made in Japan with Spring Sponge + High Tension technology</span>
+  <span>100 Combinations · FH × BH Matrix</span>
+</footer>
+
+<script>
+const rubbers = [
+  { id:'T05',   name:'Tenergy 05',    abbr:'T05',   style:'spin',    speed:13.0, spin:11.5, hard:36, note:'High-arc topspin specialist. Dense pimple-05 topsheet gives extreme grip and spin generation. The benchmark forehand rubber worldwide.' },
+  { id:'T05H',  name:'T05 Hard',      abbr:'T05H',  style:'power',   speed:13.5, spin:11.5, hard:43, note:'Harder 43° sponge version of T05. More direct power and less catapult — ideal for FH with strong strokes and for the plastic ball era.' },
+  { id:'T05FX', name:'T05 FX',        abbr:'T05FX', style:'control', speed:12.5, spin:11.0, hard:32, note:'Softer sponge T05. Easier dwell time, lighter weight. Great for players learning topspin or wanting a forgiving, touch-friendly loop.' },
+  { id:'T19',   name:'Tenergy 19',    abbr:'T19',   style:'spin',    speed:13.5, spin:12.0, hard:36, note:'Newest Tenergy. Pimple-219 topsheet gives highest spin in the entire line. Dense pimples resist opponent attacks; dwell time is superb.' },
+  { id:'T25',   name:'Tenergy 25',    abbr:'T25',   style:'speed',   speed:13.0, spin:10.5, hard:36, note:'Mid-angled geometry built for close-table pressure and flicks. More forward trajectory suits penhold and quick BH counter styles.' },
+  { id:'T25FX', name:'T25 FX',        abbr:'T25FX', style:'control', speed:12.0, spin:10.0, hard:32, note:'Softer T25 — same forward drive geometry but easier to control. Suits players wanting close-table speed without the catapult effect.' },
+  { id:'T64',   name:'Tenergy 64',    abbr:'T64',   style:'speed',   speed:13.5, spin:11.0, hard:36, note:'Fastest Tenergy. Pimple-64 geometry gives a lower arc and flatter trajectory. Classic BH rubber of Zhang Jike and fast counter players.' },
+  { id:'T64FX', name:'T64 FX',        abbr:'T64FX', style:'control', speed:12.5, spin:10.5, hard:32, note:'Softer T64 — preserves flat speed geometry but is more forgiving. Good BH option for players not yet generating enough natural speed.' },
+  { id:'T80',   name:'Tenergy 80',    abbr:'T80',   style:'balance', speed:13.0, spin:11.0, hard:36, note:'The all-rounder. Balanced pimple geometry between 05 and 64 — high topspin but good drive speed too. Suits complete attacking players.' },
+  { id:'T80FX', name:'T80 FX',        abbr:'T80FX', style:'control', speed:12.0, spin:10.5, hard:32, note:'Softer T80. Retains the balance character of T80 but is gentler. Good entry-level Tenergy for developing players or light BH touch shots.' },
+];
+
+const styleColors = { spin:'#4a88c8', speed:'#3aaa78', balance:'#c8903a', control:'#9060b8', power:'#c84848' };
+const styleLabels = { spin:'Spin', speed:'Speed', balance:'Balance', control:'Control / FX', power:'Power Spin' };
+
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function pairingDesc(fh, bh) {
+  const f = fh.style, b = bh.style;
+  const map = {
+    'spin-speed':    'Classic pro combo: devastating FH topspin combined with a fast, flat BH counter. Suits shakehand attackers who loop with FH and drive/counter with BH. Used by many world-class players.',
+    'spin-spin':     'Maximum topspin on both wings. Very high arc, heavy loop from either side. Demands precise technique; excellent for loop-to-loop rally exchanges and is physically demanding.',
+    'spin-balance':  'Strong topspin FH with a versatile BH. Smooth transition between FH loops and BH blocks/counters. Good all-around attacking setup with few weaknesses.',
+    'spin-control':  'Powerful FH loop paired with a controlled, softer BH. Reduces BH errors significantly; ideal for players still developing BH consistency while maintaining FH firepower.',
+    'spin-power':    'Heavy-spin FH plus hard-sponge BH. Both wings are demanding but reward players with an explosive two-wing attack. Requires high technical proficiency.',
+    'power-speed':   'Hard FH power spin combined with a fast BH. Very aggressive setup — physical and pace-reliant. Best for strong loop-and-counter style close to mid-table.',
+    'power-spin':    'T05 Hard FH meets a high-spin BH. Both wings are spin-heavy; FH focuses on direct power while BH maximizes arc and rotation. Demanding but lethal.',
+    'power-balance': 'Solid power FH loop with a flexible BH. The balanced BH softens the overall setup slightly for better consistency without sacrificing FH aggression.',
+    'power-control': 'Hard FH power with a forgiving softer BH. Lets you be aggressive on FH while keeping BH safe and reliable. A practical transition setup for improving players.',
+    'power-power':   'Both sides use T05 Hard — maximum power and directness on both wings. Extremely demanding physically and technically; reserved for elite players with strong strokes.',
+    'speed-speed':   'Flat, fast, low-arc play on both sides. Flick-heavy, counter-attack style close to the table. Excellent for quick exchanges and close-table pressure. Very modern style.',
+    'speed-spin':    'Fast driving FH with spin-loaded BH. Unusual reversed pairing — aggressive BH + flatter FH. Works for players who favour BH loop dominance over the traditional FH-led game.',
+    'speed-balance': 'Fast FH combined with a balanced BH. Good for flat attack plus versatile BH. Suits players who prefer a drive/smash FH style with reliable recovery on the BH.',
+    'speed-control': 'Fast FH plus soft controlled BH. Speed comes from the FH; BH stays reliable and forgiving. Suits developing players or those adapting to the Tenergy catapult effect.',
+    'speed-power':   'Fast FH drive combined with hard power BH. Both low-arc and direct. Requires confident, aggressive technique on both wings with little margin for error.',
+    'balance-balance':'Both wings are well-rounded. Consistent, complete game with no extreme weaknesses. Ideal for match players who want reliability, consistency and adaptability at every level.',
+    'balance-speed': 'Versatile FH paired with a fast BH. Can topspin or drive on FH, counter fast on BH. A solid all-around attacking combination with good adaptability.',
+    'balance-spin':  'Flexible FH combined with a heavy-spin BH. The spin BH can be a surprise weapon against opponents expecting a more neutral reply. Interesting asymmetric setup.',
+    'balance-control':'All-around FH with a forgiving softer BH. Very consistent setup; ideal for advanced beginners and intermediate players building confidence in both wings.',
+    'balance-power': 'Balanced FH combined with hard BH power. A contrast in intent — FH prioritizes versatility while BH delivers direct force. Suits a BH-dominant counter style.',
+    'control-control':'Both FX softer rubbers — maximum forgiveness and feel on both sides. Best for beginners or intermediates moving into the Tenergy family, or players who prioritise touch.',
+    'control-speed': 'Soft FH for feel and consistency, fast BH for quick attack. Unusual but effective — FH precision combined with quick BH counter-attacking.',
+    'control-spin':  'Forgiving FH paired with a high-spin BH. BH becomes the main attacking weapon while FH provides consistent, steady placement. Suits players developing their game.',
+    'control-balance':'Soft FH with a balanced BH. Safe and consistent overall. FH prioritises placement and feel; BH adds attack versatility and some counter-topspin ability.',
+    'control-power': 'Soft forgiving FH contrasted with a hard-sponge BH. Interesting setup — FH provides touch and consistency while BH delivers explosive flat power.',
+  };
+  const key = `${f}-${b}`;
+  return map[key] || 'Asymmetric Tenergy combination. Adjust technique to accommodate the different sponge hardness and topsheet geometry between wings.';
+}
+
+let selectedCell = null;
+let activeFilter = 'all';
+
+function buildLegend() {
+  const container = document.getElementById('legend');
+  Object.entries(styleLabels).forEach(([style, label]) => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.dataset.style = style;
+    item.innerHTML = `<span class="legend-dot" style="background:${styleColors[style]};"></span>${label}`;
+    item.addEventListener('click', () => filterByStyle(style, null));
+    container.appendChild(item);
+  });
+}
+
+function buildMatrix() {
+  const tbl = document.getElementById('matrix-table');
+  tbl.innerHTML = '';
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+
+  const corner = document.createElement('th');
+  corner.className = 'corner-cell';
+  corner.innerHTML = `<div class="corner-inner">FH ↓ / BH →</div>`;
+  headerRow.appendChild(corner);
+
+  rubbers.forEach(bh => {
+    const th = document.createElement('th');
+    th.className = 'col-label-cell';
+    th.innerHTML = `<div class="col-label-inner" style="color:${styleColors[bh.style]}66;">${bh.name}</div>`;
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+  tbl.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  rubbers.forEach((fh, fi) => {
+    const tr = document.createElement('tr');
+    const rl = document.createElement('td');
+    rl.className = 'row-label-cell';
+    rl.innerHTML = `<div class="row-label-inner"><span>${fh.name}</span><span class="row-dot" style="background:${styleColors[fh.style]};"></span></div>`;
+    tr.appendChild(rl);
+
+    rubbers.forEach((bh, bi) => {
+      const td = document.createElement('td');
+      td.className = 'cell';
+      td.dataset.fi = fi;
+      td.dataset.bi = bi;
+      td.dataset.fhstyle = fh.style;
+
+      const bg = hexToRgba(styleColors[fh.style], 0.10);
+      const isSame = fh.id === bh.id;
+
+      td.innerHTML = `<div class="cell-inner" style="background:${bg};">${isSame ? `<span class="same-gem" style="color:${styleColors[fh.style]};">◆</span>` : ''}</div>`;
+      td.title = `FH: ${fh.name} / BH: ${bh.name}`;
+      td.addEventListener('click', () => {
+        if (selectedCell) selectedCell.classList.remove('selected');
+        td.classList.add('selected');
+        selectedCell = td;
+        showDetail(fh, bh);
+      });
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+
+  // BH dot axis row
+  const axisRow = document.createElement('tr');
+  const axisCorner = document.createElement('td');
+  axisCorner.className = 'row-label-cell';
+  axisRow.appendChild(axisCorner);
+  rubbers.forEach(bh => {
+    const td = document.createElement('td');
+    td.style.cssText = 'padding-top:6px;text-align:center;';
+    td.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:1px;background:${styleColors[bh.style]};"></span>`;
+    axisRow.appendChild(td);
+  });
+  tbody.appendChild(axisRow);
+  tbl.appendChild(tbody);
+}
+
+function showDetail(fh, bh) {
+  const isSame = fh.id === bh.id;
+  const fhColor = styleColors[fh.style];
+  const bhColor = styleColors[bh.style];
+
+  document.getElementById('detail-panel').innerHTML = `
+    <div class="detail-left">
+      <div class="detail-title">${fh.name}<br><span style="color:var(--muted);font-size:1.1rem;">× ${bh.name}</span></div>
+      <div class="detail-tags">
+        <span class="tag" style="border-color:${fhColor}44;color:${fhColor};background:${hexToRgba(fhColor,0.08)};">FH · ${styleLabels[fh.style]}</span>
+        <span class="tag" style="border-color:${bhColor}44;color:${bhColor};background:${hexToRgba(bhColor,0.08)};">BH · ${styleLabels[bh.style]}</span>
+        ${isSame ? '<span class="tag" style="border-color:rgba(200,168,74,0.4);color:#c8a84a;background:rgba(200,168,74,0.08);">Same rubber · Both sides</span>' : ''}
+      </div>
+      <p class="detail-desc">${pairingDesc(fh, bh)}</p>
+    </div>
+    <div class="detail-right">
+      ${rubberCard(fh, 'Forehand', fhColor)}
+      ${rubberCard(bh, 'Backhand', bhColor)}
+    </div>
+  `;
+}
+
+function rubberCard(r, side, color) {
+  const speedPct = ((r.speed / 15) * 100).toFixed(1);
+  const spinPct  = ((r.spin  / 15) * 100).toFixed(1);
+  const hardPct  = ((r.hard  / 50) * 100).toFixed(1);
+  return `
+  <div class="rubber-card" style="border-color:${hexToRgba(color,0.3)};">
+    <div class="rubber-card-label">${side}</div>
+    <div class="rubber-card-name" style="color:${color};">${r.name}</div>
+    <div class="rubber-stats">
+      <div class="stat-bar-wrap">
+        <div class="stat-label"><span>Speed</span><span style="color:${color};">${r.speed}</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:${speedPct}%;background:${color};"></div></div>
+      </div>
+      <div class="stat-bar-wrap">
+        <div class="stat-label"><span>Spin</span><span style="color:${color};">${r.spin}</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:${spinPct}%;background:${color};"></div></div>
+      </div>
+      <div class="stat-bar-wrap">
+        <div class="stat-label"><span>Hard °</span><span style="color:${color};">${r.hard}</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:${hardPct}%;background:${color};"></div></div>
+      </div>
+    </div>
+    <div class="rubber-note">${r.note}</div>
+  </div>`;
+}
+
+function filterByStyle(style, btn) {
+  activeFilter = style;
+  document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.toggle('active', b.dataset.style === style));
+  document.querySelectorAll('.legend-item').forEach(i => i.classList.toggle('active', i.dataset.style === style));
+  document.querySelectorAll('.cell').forEach(td => {
+    td.classList.toggle('dimmed', style !== 'all' && td.dataset.fhstyle !== style);
+  });
+}
+
+document.querySelectorAll('.ctrl-btn').forEach(btn => {
+  btn.addEventListener('click', () => filterByStyle(btn.dataset.style, btn));
+});
+
+buildLegend();
+buildMatrix();
+</script>
+</body>
+</html>
