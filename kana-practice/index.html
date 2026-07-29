@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>手書き練習 — Kana Writing Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EAE3D1;
+    --paper-deep:#E0D7C0;
+    --line: rgba(43,43,40,0.28);
+    --ink:#2B2B28;
+    --ink-soft:#736c5c;
+    --hanko:#A6332E;
+    --hanko-soft: rgba(166,51,46,0.12);
+    --aizome:#33566B;
+    --aizome-soft: rgba(51,86,107,0.1);
+    --good:#4b6b4f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(255,255,255,0.35), transparent 60%),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:36px 16px 60px;
+    position:relative;
+  }
+  /* subtle paper grain */
+  body::before{
+    content:'';
+    position:fixed; inset:0;
+    pointer-events:none;
+    opacity:0.05;
+    mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-size:180px;
+  }
+
+  .app{
+    width:100%;
+    max-width:600px;
+    position:relative;
+    z-index:1;
+  }
+
+  header{
+    text-align:center;
+    margin-bottom:28px;
+  }
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 8px;
+    font-weight:500;
+  }
+  h1{
+    font-family:'Shippori Mincho', serif;
+    font-weight:800;
+    font-size:clamp(28px, 6vw, 38px);
+    margin:0;
+    letter-spacing:0.02em;
+  }
+  h1 .accent{ color:var(--hanko); }
+  .sub{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:8px;
+  }
+
+  /* control panel */
+  .panel{
+    background:rgba(255,255,255,0.35);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:14px 16px;
+    margin-bottom:22px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .control-group{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .control-label{
+    font-size:10px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:700;
+  }
+  .segmented{
+    display:inline-flex;
+    background:rgba(43,43,40,0.06);
+    border-radius:9px;
+    padding:3px;
+    gap:2px;
+  }
+  .segmented button{
+    border:none;
+    background:transparent;
+    padding:6px 12px;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:500;
+    color:var(--ink-soft);
+    border-radius:7px;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+    white-space:nowrap;
+  }
+  .segmented button.active{
+    background:var(--ink);
+    color:var(--paper);
+  }
+  .segmented button:hover:not(.active){
+    color:var(--ink);
+  }
+  .checkbox-row{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:13px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    user-select:none;
+  }
+  .checkbox-row input{ accent-color:var(--aizome); width:15px; height:15px; cursor:pointer;}
+
+  /* stage */
+  .stage-wrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .prompt{
+    text-align:center;
+    margin-bottom:18px;
+    min-height:76px;
+  }
+  .prompt-label{
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .prompt-main{
+    font-family:'Shippori Mincho', serif;
+    font-size:clamp(30px, 8vw, 46px);
+    font-weight:600;
+    line-height:1.1;
+  }
+  .prompt-meaning{
+    font-size:14px;
+    color:var(--ink-soft);
+    margin-top:4px;
+    font-style:italic;
+  }
+
+  .stage-outer{
+    position:relative;
+    width:min(72vw, 280px);
+    height:min(72vw, 280px);
+  }
+  .stage-grid{
+    position:relative;
+    width:100%;
+    height:100%;
+    border:1.5px solid var(--ink);
+    border-radius:4px;
+    background:rgba(255,255,255,0.28);
+    overflow:hidden;
+    touch-action:none;
+  }
+  .stage-grid::before{
+    content:'';
+    position:absolute; left:50%; top:0; bottom:0; width:0;
+    border-left:1px dashed var(--line);
+  }
+  .stage-grid::after{
+    content:'';
+    position:absolute; top:50%; left:0; right:0; height:0;
+    border-top:1px dashed var(--line);
+  }
+  .guide-char{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Shippori Mincho', serif;
+    font-size:min(56vw*0.72, 210px);
+    color:var(--ink);
+    opacity:0.14;
+    pointer-events:none;
+    user-select:none;
+  }
+  canvas{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    cursor:crosshair;
+  }
+
+  .hanko-stamp{
+    position:absolute;
+    top:-14px; right:-14px;
+    width:64px; height:64px;
+    border-radius:6px;
+    border:2.5px solid var(--hanko);
+    color:var(--hanko);
+    background:rgba(234,227,209,0.9);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Shippori Mincho', serif;
+    font-size:30px;
+    font-weight:800;
+    transform:scale(0) rotate(-14deg);
+    opacity:0;
+    transition:none;
+    pointer-events:none;
+  }
+  .hanko-stamp.show{
+    animation: stamp-in 0.42s cubic-bezier(.2,1.4,.4,1) forwards;
+  }
+  @keyframes stamp-in{
+    0%{ transform:scale(1.7) rotate(-14deg); opacity:0; }
+    60%{ transform:scale(0.92) rotate(-6deg); opacity:1; }
+    100%{ transform:scale(1) rotate(-8deg); opacity:1; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .hanko-stamp.show{ animation:none; opacity:1; transform:scale(1) rotate(-8deg); }
+  }
+
+  .actions{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  button.btn{
+    font-family:inherit;
+    font-size:14px;
+    font-weight:700;
+    padding:10px 20px;
+    border-radius:9px;
+    border:1.5px solid var(--ink);
+    background:transparent;
+    color:var(--ink);
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease, transform .1s ease;
+  }
+  button.btn:hover{ background:var(--ink); color:var(--paper); }
+  button.btn:active{ transform:scale(0.97); }
+  button.btn.primary{
+    background:var(--aizome);
+    border-color:var(--aizome);
+    color:var(--paper);
+  }
+  button.btn.primary:hover{ background:#26424f; }
+  button.btn:focus-visible{ outline:2.5px solid var(--hanko); outline-offset:2px; }
+
+  .reveal{
+    margin-top:18px;
+    text-align:center;
+    min-height:20px;
+  }
+  .reveal-line{
+    font-size:14px;
+    color:var(--ink-soft);
+  }
+  .reveal-line b{
+    color:var(--ink);
+    font-family:'Shippori Mincho', serif;
+    font-size:20px;
+    font-weight:700;
+    margin-right:8px;
+  }
+  .score-row{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    margin-top:14px;
+  }
+  button.score-btn{
+    font-family:inherit;
+    font-size:13px;
+    font-weight:700;
+    padding:8px 16px;
+    border-radius:8px;
+    border:1.5px solid var(--line);
+    background:rgba(255,255,255,0.4);
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+  button.score-btn.miss:hover{ border-color:var(--hanko); color:var(--hanko); }
+  button.score-btn.got:hover{ border-color:var(--good); color:var(--good); }
+
+  .stats{
+    text-align:center;
+    margin-top:26px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    letter-spacing:0.02em;
+  }
+  .stats b{ color:var(--ink); }
+
+  footer{
+    text-align:center;
+    margin-top:30px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    opacity:0.8;
+  }
+
+  @media (max-width:480px){
+    .panel{ justify-content:center; }
+    .control-group{ align-items:center; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <p class="eyebrow">手書き練習 · Kana Writing Practice</p>
+    <h1>Write the <span class="accent">仮名</span></h1>
+    <p class="sub">Trace it, then try it from memory. One character or word at a time.</p>
+  </header>
+
+  <div class="panel">
+    <div class="control-group">
+      <span class="control-label">Practice</span>
+      <div class="segmented" id="modeSeg">
+        <button data-val="characters" class="active">Characters</button>
+        <button data-val="words">Words</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <span class="control-label">Script</span>
+      <div class="segmented" id="scriptSeg">
+        <button data-val="hiragana" class="active">Hiragana</button>
+        <button data-val="katakana">Katakana</button>
+        <button data-val="both">Both</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <span class="control-label">Study mode</span>
+      <div class="segmented" id="studySeg">
+        <button data-val="trace" class="active">Trace</button>
+        <button data-val="recall">Recall</button>
+      </div>
+    </div>
+    <div class="control-group" id="dakutenGroup">
+      <span class="control-label">Extras</span>
+      <label class="checkbox-row">
+        <input type="checkbox" id="dakutenCheck">
+        include ゛゜ (dakuten)
+      </label>
+    </div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="prompt">
+      <p class="prompt-label" id="promptLabel">write this character</p>
+      <p class="prompt-main" id="promptMain">あ</p>
+      <p class="prompt-meaning" id="promptMeaning"></p>
+    </div>
+
+    <div class="stage-outer">
+      <div class="stage-grid" id="stageGrid">
+        <div class="guide-char" id="guideChar">あ</div>
+        <canvas id="canvas"></canvas>
+        <div class="hanko-stamp" id="hankoStamp"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="clearBtn">Clear</button>
+      <button class="btn primary" id="checkBtn">Check</button>
+      <button class="btn" id="nextBtn">Next →</button>
+    </div>
+
+    <div class="reveal" id="revealBox" style="display:none;">
+      <p class="reveal-line" id="revealLine"></p>
+      <div class="score-row">
+        <button class="score-btn miss" id="missBtn">Missed it</button>
+        <button class="score-btn got" id="gotBtn">Got it ✓</button>
+      </div>
+    </div>
+
+    <p class="stats" id="stats"><b>0</b> practiced · <b>0</b> remembered</p>
+  </div>
+
+  <footer>Tip: switch to <b>Recall</b> once tracing feels easy — you'll only see the romaji.</footer>
+</div>
+
+<script>
+(function(){
+  // ---------- data ----------
+  const BASE = [
+    ["a","あ","ア"],["i","い","イ"],["u","う","ウ"],["e","え","エ"],["o","お","オ"],
+    ["ka","か","カ"],["ki","き","キ"],["ku","く","ク"],["ke","け","ケ"],["ko","こ","コ"],
+    ["sa","さ","サ"],["shi","し","シ"],["su","す","ス"],["se","せ","セ"],["so","そ","ソ"],
+    ["ta","た","タ"],["chi","ち","チ"],["tsu","つ","ツ"],["te","て","テ"],["to","と","ト"],
+    ["na","な","ナ"],["ni","に","ニ"],["nu","ぬ","ヌ"],["ne","ね","ネ"],["no","の","ノ"],
+    ["ha","は","ハ"],["hi","ひ","ヒ"],["fu","ふ","フ"],["he","へ","ヘ"],["ho","ほ","ホ"],
+    ["ma","ま","マ"],["mi","み","ミ"],["mu","む","ム"],["me","め","メ"],["mo","も","モ"],
+    ["ya","や","ヤ"],["yu","ゆ","ユ"],["yo","よ","ヨ"],
+    ["ra","ら","ラ"],["ri","り","リ"],["ru","る","ル"],["re","れ","レ"],["ro","ろ","ロ"],
+    ["wa","わ","ワ"],["wo","を","ヲ"],["n","ん","ン"]
+  ];
+  const DAKUTEN = [
+    ["ga","が","ガ"],["gi","ぎ","ギ"],["gu","ぐ","グ"],["ge","げ","ゲ"],["go","ご","ゴ"],
+    ["za","ざ","ザ"],["ji","じ","ジ"],["zu","ず","ズ"],["ze","ぜ","ゼ"],["zo","ぞ","ゾ"],
+    ["da","だ","ダ"],["di","ぢ","ヂ"],["du","づ","ヅ"],["de","で","デ"],["do","ど","ド"],
+    ["ba","ば","バ"],["bi","び","ビ"],["bu","ぶ","ブ"],["be","べ","ベ"],["bo","ぼ","ボ"],
+    ["pa","ぱ","パ"],["pi","ぴ","ピ"],["pu","ぷ","プ"],["pe","ぺ","ペ"],["po","ぽ","ポ"]
+  ];
+  const WORDS = [
+    ["ねこ","neko","cat","hiragana"],["いぬ","inu","dog","hiragana"],
+    ["みず","mizu","water","hiragana"],["やま","yama","mountain","hiragana"],
+    ["かわ","kawa","river","hiragana"],["そら","sora","sky","hiragana"],
+    ["はな","hana","flower","hiragana"],["くるま","kuruma","car","hiragana"],
+    ["ともだち","tomodachi","friend","hiragana"],["たべもの","tabemono","food","hiragana"],
+    ["おちゃ","ocha","tea","hiragana"],["あさ","asa","morning","hiragana"],
+    ["よる","yoru","night","hiragana"],["さくら","sakura","cherry blossom","hiragana"],
+    ["ほん","hon","book","hiragana"],["つくえ","tsukue","desk","hiragana"],
+    ["いす","isu","chair","hiragana"],["かぞく","kazoku","family","hiragana"],
+    ["せんせい","sensei","teacher","hiragana"],["がくせい","gakusei","student","hiragana"],
+    ["おかね","okane","money","hiragana"],["てがみ","tegami","letter","hiragana"],
+    ["えき","eki","station","hiragana"],["みせ","mise","shop","hiragana"],
+    ["りんご","ringo","apple","hiragana"],["たまご","tamago","egg","hiragana"],
+    ["さかな","sakana","fish","hiragana"],
+    ["コーヒー","koohii","coffee","katakana"],["パン","pan","bread","katakana"],
+    ["テレビ","terebi","television","katakana"],["カメラ","kamera","camera","katakana"],
+    ["バス","basu","bus","katakana"],["ケーキ","keeki","cake","katakana"],
+    ["ノート","nooto","notebook","katakana"],["アイス","aisu","ice cream","katakana"]
+  ];
+
+  // ---------- state ----------
+  let mode = "characters";
+  let script = "hiragana";
+  let studyMode = "trace";
+  let includeDakuten = false;
+  let deck = [];
+  let current = null;
+  let checked = false;
+  let stats = { seen: 0, correct: 0 };
+
+  // ---------- elements ----------
+  const $ = id => document.getElementById(id);
+  const promptLabel = $("promptLabel");
+  const promptMain = $("promptMain");
+  const promptMeaning = $("promptMeaning");
+  const guideChar = $("guideChar");
+  const hankoStamp = $("hankoStamp");
+  const revealBox = $("revealBox");
+  const revealLine = $("revealLine");
+  const statsEl = $("stats");
+  const canvas = $("canvas");
+  const ctx = canvas.getContext("2d");
+  const dakutenGroup = $("dakutenGroup");
+
+  function buildDeck(){
+    if(mode === "characters"){
+      const rows = includeDakuten ? BASE.concat(DAKUTEN) : BASE.slice();
+      deck = rows.map(r => ({
+        romaji: r[0],
+        hira: r[1],
+        kata: r[2],
+        display: script === "katakana" ? r[2] : r[1],
+        both: script === "both",
+        meaning: null,
+        kind: "char"
+      }));
+      if(script === "both"){
+        // duplicate entries so both scripts appear, each as its own card
+        const hiraCards = rows.map(r => ({romaji:r[0], display:r[1], meaning:null, kind:"char"}));
+        const kataCards = rows.map(r => ({romaji:r[0], display:r[2], meaning:null, kind:"char"}));
+        deck = hiraCards.concat(kataCards);
+      }
+    } else {
+      let rows = WORDS;
+      if(script === "hiragana") rows = WORDS.filter(w => w[3] === "hiragana");
+      else if(script === "katakana") rows = WORDS.filter(w => w[3] === "katakana");
+      deck = rows.map(r => ({ romaji: r[1], display: r[0], meaning: r[2], kind:"word" }));
+    }
+    shuffle(deck);
+  }
+
+  function shuffle(arr){
+    for(let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i+1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+
+  function pickNext(){
+    if(deck.length === 0) buildDeck();
+    let candidate = deck[Math.floor(Math.random() * deck.length)];
+    if(deck.length > 1 && current && candidate.display === current.display){
+      candidate = deck[Math.floor(Math.random() * deck.length)];
+    }
+    current = candidate;
+    checked = false;
+    clearCanvas();
+    hankoStamp.classList.remove("show");
+    hankoStamp.textContent = "";
+    revealBox.style.display = "none";
+
+    if(studyMode === "trace"){
+      promptLabel.textContent = current.kind === "word" ? "trace this word" : "trace this character";
+      promptMain.textContent = current.display;
+      promptMeaning.textContent = current.kind === "word" ? (current.meaning || "") : "";
+      guideChar.textContent = current.display;
+      guideChar.style.display = "flex";
+      guideChar.style.fontSize = current.kind === "word" ? "min(20vw, 76px)" : "";
+    } else {
+      promptLabel.textContent = current.kind === "word" ? "write this word" : "write this character";
+      promptMain.textContent = current.romaji;
+      promptMeaning.textContent = current.kind === "word" ? (current.meaning || "") : "";
+      guideChar.style.display = "none";
+    }
+  }
+
+  function resizeCanvas(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#2B2B28";
+    ctx.lineWidth = 9;
+  }
+
+  function clearCanvas(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // ---------- drawing ----------
+  let drawing = false;
+  function getPos(e){
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  }
+  function startDraw(e){
+    e.preventDefault();
+    drawing = true;
+    const p = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  }
+  function moveDraw(e){
+    if(!drawing) return;
+    e.preventDefault();
+    const p = getPos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  }
+  function endDraw(){ drawing = false; }
+
+  canvas.addEventListener("mousedown", startDraw);
+  canvas.addEventListener("mousemove", moveDraw);
+  window.addEventListener("mouseup", endDraw);
+  canvas.addEventListener("touchstart", startDraw, {passive:false});
+  canvas.addEventListener("touchmove", moveDraw, {passive:false});
+  canvas.addEventListener("touchend", endDraw);
+
+  // ---------- controls ----------
+  function setupSegmented(id, onChange){
+    const el = $(id);
+    el.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        el.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        onChange(btn.dataset.val);
+      });
+    });
+  }
+
+  setupSegmented("modeSeg", val => {
+    mode = val;
+    dakutenGroup.style.display = mode === "characters" ? "flex" : "none";
+    buildDeck();
+    pickNext();
+  });
+  setupSegmented("scriptSeg", val => {
+    script = val;
+    buildDeck();
+    pickNext();
+  });
+  setupSegmented("studySeg", val => {
+    studyMode = val;
+    pickNext();
+  });
+  $("dakutenCheck").addEventListener("change", e => {
+    includeDakuten = e.target.checked;
+    buildDeck();
+    pickNext();
+  });
+
+  $("clearBtn").addEventListener("click", clearCanvas);
+
+  $("checkBtn").addEventListener("click", () => {
+    checked = true;
+    const kanaShown = current.display;
+    hankoStamp.textContent = kanaShown.length > 2 ? kanaShown.slice(0,1) : kanaShown;
+    hankoStamp.classList.remove("show");
+    void hankoStamp.offsetWidth; // restart animation
+    hankoStamp.classList.add("show");
+
+    revealBox.style.display = "block";
+    if(studyMode === "recall"){
+      revealLine.innerHTML = "<b>" + kanaShown + "</b> = " + current.romaji +
+        (current.meaning ? " · " + current.meaning : "");
+    } else {
+      revealLine.innerHTML = "<b>" + kanaShown + "</b> " + current.romaji +
+        (current.meaning ? " · " + current.meaning : "") + " — how close was your stroke?";
+    }
+  });
+
+  $("nextBtn").addEventListener("click", pickNext);
+
+  function score(correct){
+    stats.seen += 1;
+    if(correct) stats.correct += 1;
+    updateStats();
+    pickNext();
+  }
+  $("gotBtn").addEventListener("click", () => score(true));
+  $("missBtn").addEventListener("click", () => score(false));
+
+  function updateStats(){
+    statsEl.innerHTML = "<b>" + stats.seen + "</b> practiced · <b>" + stats.correct + "</b> remembered";
+  }
+
+  // ---------- init ----------
+  window.addEventListener("resize", () => { resizeCanvas(); });
+  resizeCanvas();
+  buildDeck();
+  pickNext();
+})();
+</script>
+</body>
+</html>
