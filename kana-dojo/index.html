@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kana Dojo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700;800&family=Zen+Kaku+Gothic+New:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --washi:#EDE6D3;
+    --washi-deep:#E3DAC3;
+    --sumi:#22201B;
+    --sumi-soft:#5B5749;
+    --ai:#1F3A5C;
+    --ai-deep:#14283F;
+    --beni:#B23A2E;
+    --grid-line:#C7BCA0;
+    --paper-card:#F5F0E4;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-font-smoothing:antialiased;}
+  body{
+    margin:0;
+    background:var(--washi);
+    background-image:
+      radial-gradient(ellipse at top left, rgba(255,255,255,0.35), transparent 55%),
+      radial-gradient(ellipse at bottom right, rgba(0,0,0,0.04), transparent 60%);
+    color:var(--sumi);
+    font-family:'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif;
+    min-height:100vh;
+    padding:32px 18px 60px;
+  }
+  .app{max-width:820px;margin:0 auto;}
+
+  /* ---------- Hero ---------- */
+  .hero{display:flex;align-items:center;gap:22px;margin-bottom:28px;}
+  .hero-mark{
+    font-family:'Shippori Mincho', serif;
+    font-size:64px;
+    font-weight:700;
+    color:var(--ai-deep);
+    line-height:1;
+    position:relative;
+    overflow:hidden;
+    white-space:nowrap;
+  }
+  .hero-mark span{display:inline-block; animation: reveal 900ms ease-out both;}
+  @keyframes reveal{
+    from{clip-path:inset(0 100% 0 0); opacity:0;}
+    to{clip-path:inset(0 0 0 0); opacity:1;}
+  }
+  .hero-text h1{
+    font-family:'Shippori Mincho', serif;
+    font-size:26px;
+    font-weight:700;
+    margin:0 0 4px;
+    letter-spacing:0.01em;
+  }
+  .hero-text p{margin:0; color:var(--sumi-soft); font-size:14px;}
+  .hero-rule{height:2px;width:46px;background:var(--beni);margin-top:8px;border-radius:1px;}
+
+  /* ---------- Tabs ---------- */
+  .tabs{display:flex; gap:8px; margin-bottom:16px;}
+  .tab{
+    flex:1;
+    font-family:'Shippori Mincho', serif;
+    font-size:15px;
+    background:transparent;
+    border:1px solid var(--grid-line);
+    border-radius:10px;
+    padding:12px 10px;
+    cursor:pointer;
+    color:var(--sumi-soft);
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:background 160ms ease, color 160ms ease, border-color 160ms ease;
+  }
+  .tab span{font-family:'Zen Kaku Gothic New',sans-serif; font-size:13px;}
+  .tab.active{background:var(--ai-deep); border-color:var(--ai-deep); color:var(--washi);}
+  .tab:focus-visible, .chip:focus-visible, button:focus-visible, input:focus-visible{
+    outline:2px solid var(--ai); outline-offset:2px;
+  }
+
+  /* ---------- Filters ---------- */
+  .filters{
+    display:flex; flex-wrap:wrap; gap:18px;
+    background:var(--paper-card);
+    border:1px solid var(--grid-line);
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:22px;
+  }
+  .filter-group{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .filter-label{font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--sumi-soft); margin-right:4px;}
+  .chip{
+    font-family:inherit; font-size:13px;
+    background:transparent; border:1px solid var(--grid-line);
+    border-radius:999px; padding:6px 14px; cursor:pointer; color:var(--sumi);
+    transition:background 150ms ease, color 150ms ease, border-color 150ms ease;
+  }
+  .chip.active{background:var(--ai); border-color:var(--ai); color:var(--washi);}
+
+  /* ---------- Genkouyoushi square (signature element) ---------- */
+  .square{
+    position:relative;
+    background:var(--paper-card);
+    border:1.5px solid var(--sumi);
+    border-radius:4px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:6px;
+    overflow:hidden;
+  }
+  .square::before, .square::after{
+    content:''; position:absolute; background:var(--grid-line);
+  }
+  .square::before{ left:50%; top:8%; bottom:8%; width:1px; transform:translateX(-50%);}
+  .square::after{ top:50%; left:8%; right:8%; height:1px; transform:translateY(-50%);}
+
+  /* ---------- Study grid ---------- */
+  #stage{min-height:260px;}
+  .study-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(78px,1fr));
+    gap:10px;
+  }
+  .flashcard{
+    aspect-ratio:1/1;
+    perspective:600px;
+    cursor:pointer;
+  }
+  .flashcard-inner{
+    position:relative; width:100%; height:100%;
+    transition:transform 420ms cubic-bezier(.2,.8,.2,1);
+    transform-style:preserve-3d;
+  }
+  .flashcard.flipped .flashcard-inner{transform:rotateY(180deg);}
+  .flashcard-face{
+    position:absolute; inset:0;
+    backface-visibility:hidden;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+  }
+  .flashcard-face.front .glyph{font-size:30px; font-weight:500; white-space:nowrap;}
+  .flashcard-face.front .glyph.is-combo{font-size:19px;}
+  .flashcard-face.back{transform:rotateY(180deg);}
+  .flashcard-face.back .romaji{
+    font-family:'Shippori Mincho', serif; font-size:16px; color:var(--ai-deep); font-weight:600;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .flashcard-inner{transition:none;}
+  }
+
+  /* ---------- Quiz ---------- */
+  .quiz-wrap{display:flex; flex-direction:column; align-items:center; gap:20px;}
+  .quiz-square{width:150px; height:150px;}
+  .quiz-square .glyph{
+    font-size:64px; font-weight:500; line-height:1; white-space:nowrap;
+  }
+  .quiz-square .glyph.is-combo{font-size:40px;}
+  .quiz-mode-toggle{display:flex; gap:8px;}
+  .quiz-mark{
+    position:absolute; top:6px; right:8px; font-family:'Shippori Mincho',serif;
+    font-size:20px; font-weight:800;
+  }
+  .quiz-mark.correct{color:var(--ai);}
+  .quiz-mark.wrong{color:var(--beni);}
+
+  .choices{display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:320px;}
+  .choice-btn{
+    font-family:'Zen Kaku Gothic New',sans-serif; font-size:16px;
+    padding:14px 8px; border-radius:8px; border:1.5px solid var(--grid-line);
+    background:var(--paper-card); cursor:pointer; color:var(--sumi);
+    transition:border-color 140ms ease, background 140ms ease;
+  }
+  .choice-btn:hover{border-color:var(--ai);}
+  .choice-btn.correct{background:var(--ai); border-color:var(--ai); color:var(--washi);}
+  .choice-btn.wrong{background:var(--beni); border-color:var(--beni); color:var(--washi);}
+  .choice-btn:disabled{cursor:default;}
+
+  .type-row{display:flex; gap:8px; width:100%; max-width:320px;}
+  .type-row input{
+    flex:1; font-family:'Zen Kaku Gothic New',sans-serif; font-size:16px;
+    padding:12px 14px; border-radius:8px; border:1.5px solid var(--grid-line);
+    background:var(--paper-card); color:var(--sumi);
+  }
+  .type-row button{
+    font-family:'Shippori Mincho',serif; font-size:14px;
+    padding:0 18px; border-radius:8px; border:none; background:var(--ai-deep); color:var(--washi); cursor:pointer;
+  }
+  .feedback-line{min-height:20px; font-size:14px; color:var(--sumi-soft);}
+  .feedback-line.wrong-text{color:var(--beni);}
+  .feedback-line.correct-text{color:var(--ai-deep);}
+
+  .next-btn{
+    font-family:'Shippori Mincho',serif; font-size:14px;
+    padding:10px 22px; border-radius:999px; border:1.5px solid var(--sumi);
+    background:transparent; color:var(--sumi); cursor:pointer;
+  }
+
+  /* ---------- Progress panel ---------- */
+  .progress-panel{
+    margin-top:30px; border-top:1px dashed var(--grid-line); padding-top:20px;
+  }
+  .progress-stats{display:flex; gap:24px; flex-wrap:wrap; margin-bottom:14px; font-size:13px; color:var(--sumi-soft);}
+  .progress-stats b{color:var(--sumi); font-size:15px; display:block; font-family:'Shippori Mincho',serif;}
+  .mastery-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(18px,1fr)); gap:4px; max-width:100%;}
+  .mastery-cell{
+    aspect-ratio:1/1; border-radius:2px; border:1px solid var(--grid-line);
+    background:var(--paper-card);
+  }
+  .reset-link{
+    display:block; margin:22px auto 0; background:none; border:none;
+    color:var(--sumi-soft); font-size:12px; text-decoration:underline; cursor:pointer;
+  }
+  .loading{text-align:center; padding:60px 0; color:var(--sumi-soft); font-size:14px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hero">
+    <div class="hero-mark"><span>かな</span></div>
+    <div class="hero-text">
+      <h1>Kana Dojo</h1>
+      <p>Hiragana &amp; katakana drills — Phase 1 on the way to N3</p>
+      <div class="hero-rule"></div>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab active" data-mode="study">学 <span>Study</span></button>
+    <button class="tab" data-mode="quiz">練 <span>Quiz</span></button>
+  </nav>
+
+  <section class="filters">
+    <div class="filter-group">
+      <span class="filter-label">Script</span>
+      <button class="chip active" data-script="hiragana">Hiragana</button>
+      <button class="chip" data-script="katakana">Katakana</button>
+      <button class="chip" data-script="both">Both</button>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Include</span>
+      <button class="chip toggle" data-tier="dakuten">Dakuten ゛゜</button>
+      <button class="chip toggle" data-tier="yoon">Yōon 拗音</button>
+    </div>
+  </section>
+
+  <main id="stage"><div class="loading">Loading your progress…</div></main>
+
+  <section class="progress-panel">
+    <div class="progress-stats">
+      <div><b id="statMastered">0 / 0</b>mastered</div>
+      <div><b id="statAccuracy">—</b>overall accuracy</div>
+      <div><b id="statStreak">0</b>current streak</div>
+    </div>
+    <div class="mastery-grid" id="masteryGrid"></div>
+  </section>
+
+  <button class="reset-link" id="resetBtn">Erase all progress</button>
+</div>
+
+<script>
+(function(){
+  // ---------- Data ----------
+  const SEION = [
+    ['a','あ','ア','vowels'],['i','い','イ','vowels'],['u','う','ウ','vowels'],['e','え','エ','vowels'],['o','お','オ','vowels'],
+    ['ka','か','カ','k'],['ki','き','キ','k'],['ku','く','ク','k'],['ke','け','ケ','k'],['ko','こ','コ','k'],
+    ['sa','さ','サ','s'],['shi','し','シ','s'],['su','す','ス','s'],['se','せ','セ','s'],['so','そ','ソ','s'],
+    ['ta','た','タ','t'],['chi','ち','チ','t'],['tsu','つ','ツ','t'],['te','て','テ','t'],['to','と','ト','t'],
+    ['na','な','ナ','n'],['ni','に','ニ','n'],['nu','ぬ','ヌ','n'],['ne','ね','ネ','n'],['no','の','ノ','n'],
+    ['ha','は','ハ','h'],['hi','ひ','ヒ','h'],['fu','ふ','フ','h'],['he','へ','ヘ','h'],['ho','ほ','ホ','h'],
+    ['ma','ま','マ','m'],['mi','み','ミ','m'],['mu','む','ム','m'],['me','め','メ','m'],['mo','も','モ','m'],
+    ['ya','や','ヤ','y'],['yu','ゆ','ユ','y'],['yo','よ','ヨ','y'],
+    ['ra','ら','ラ','r'],['ri','り','リ','r'],['ru','る','ル','r'],['re','れ','レ','r'],['ro','ろ','ロ','r'],
+    ['wa','わ','ワ','w'],['wo','を','ヲ','w'],
+    ['n','ん','ン','nn'],
+  ];
+  const DAKUTEN = [
+    ['ga','が','ガ'],['gi','ぎ','ギ'],['gu','ぐ','グ'],['ge','げ','ゲ'],['go','ご','ゴ'],
+    ['za','ざ','ザ'],['ji','じ','ジ'],['zu','ず','ズ'],['ze','ぜ','ゼ'],['zo','ぞ','ゾ'],
+    ['da','だ','ダ'],['ji','ぢ','ヂ'],['zu','づ','ヅ'],['de','で','デ'],['do','ど','ド'],
+    ['ba','ば','バ'],['bi','び','ビ'],['bu','ぶ','ブ'],['be','べ','ベ'],['bo','ぼ','ボ'],
+    ['pa','ぱ','パ'],['pi','ぴ','ピ'],['pu','ぷ','プ'],['pe','ぺ','ペ'],['po','ぽ','ポ'],
+  ];
+  const YOON = [
+    ['kya','きゃ','キャ'],['kyu','きゅ','キュ'],['kyo','きょ','キョ'],
+    ['sha','しゃ','シャ'],['shu','しゅ','シュ'],['sho','しょ','ショ'],
+    ['cha','ちゃ','チャ'],['chu','ちゅ','チュ'],['cho','ちょ','チョ'],
+    ['nya','にゃ','ニャ'],['nyu','にゅ','ニュ'],['nyo','にょ','ニョ'],
+    ['hya','ひゃ','ヒャ'],['hyu','ひゅ','ヒュ'],['hyo','ひょ','ヒョ'],
+    ['mya','みゃ','ミャ'],['myu','みゅ','ミュ'],['myo','みょ','ミョ'],
+    ['rya','りゃ','リャ'],['ryu','りゅ','リュ'],['ryo','りょ','リョ'],
+    ['gya','ぎゃ','ギャ'],['gyu','ぎゅ','ギュ'],['gyo','ぎょ','ギョ'],
+    ['ja','じゃ','ジャ'],['ju','じゅ','ジュ'],['jo','じょ','ジョ'],
+    ['bya','びゃ','ビャ'],['byu','びゅ','ビュ'],['byo','びょ','ビョ'],
+    ['pya','ぴゃ','ピャ'],['pyu','ぴゅ','ピュ'],['pyo','ぴょ','ピョ'],
+  ];
+  const ALT = {
+    shi:['si'], chi:['ti'], tsu:['tu'], fu:['hu'], ji:['zi'], zu:['du'], wo:['o'], n:['nn'],
+    sha:['sya'], shu:['syu'], sho:['syo'], cha:['tya'], chu:['tyu'], cho:['tyo'],
+    ja:['zya','jya'], ju:['zyu','jyu'], jo:['zyo','jyo'],
+  };
+
+  function buildDeck(script, includeDakuten, includeYoon){
+    const rows = [];
+    SEION.forEach(([r,h,k]) => rows.push([r,h,k,'seion']));
+    if (includeDakuten) DAKUTEN.forEach(([r,h,k]) => rows.push([r,h,k,'dakuten']));
+    if (includeYoon) YOON.forEach(([r,h,k]) => rows.push([r,h,k,'yoon']));
+    const deck = [];
+    rows.forEach(([romaji,h,k,tier]) => {
+      if (script === 'hiragana' || script === 'both') deck.push({id:'hira-'+h, glyph:h, romaji, tier, script:'hiragana'});
+      if (script === 'katakana' || script === 'both') deck.push({id:'kata-'+k, glyph:k, romaji, tier, script:'katakana'});
+    });
+    return deck;
+  }
+
+  // ---------- State ----------
+  let settings = { script:'hiragana', dakuten:false, yoon:false };
+  let progress = {}; // id -> {attempts, correct}
+  let mode = 'study';
+  let quizInputMode = 'choice';
+  let currentCard = null;
+  let lastCardId = null;
+  let streak = 0;
+  let awaitingNext = false;
+
+  const stage = document.getElementById('stage');
+  const masteryGrid = document.getElementById('masteryGrid');
+
+  // ---------- Storage ----------
+  const STORAGE_KEY = 'kana-dojo-data';
+  async function loadData(){
+    try {
+      const res = await window.storage.get(STORAGE_KEY, false);
+      if (res && res.value) {
+        const parsed = JSON.parse(res.value);
+        progress = parsed.progress || {};
+        settings = Object.assign(settings, parsed.settings || {});
+      }
+    } catch(e) { /* nothing saved yet */ }
+  }
+  async function saveData(){
+    try {
+      await window.storage.set(STORAGE_KEY, JSON.stringify({progress, settings}), false);
+    } catch(e) { console.error('Save failed', e); }
+  }
+
+  // ---------- Helpers ----------
+  function activeDeck(){ return buildDeck(settings.script, settings.dakuten, settings.yoon); }
+
+  function accuracyOf(id){
+    const s = progress[id];
+    if (!s || !s.attempts) return null;
+    return s.correct / s.attempts;
+  }
+
+  function weightOf(id){
+    const s = progress[id];
+    if (!s || !s.attempts) return 5;
+    const acc = s.correct / s.attempts;
+    return 1 + (1-acc)*6 + Math.max(0, 3 - s.attempts);
+  }
+
+  function pickCard(deck){
+    let pool = deck.filter(c => c.id !== lastCardId);
+    if (pool.length === 0) pool = deck;
+    const weights = pool.map(c => weightOf(c.id));
+    const total = weights.reduce((a,b)=>a+b,0);
+    let r = Math.random()*total;
+    for (let i=0;i<pool.length;i++){
+      r -= weights[i];
+      if (r <= 0) return pool[i];
+    }
+    return pool[pool.length-1];
+  }
+
+  function recordAnswer(id, correct){
+    if (!progress[id]) progress[id] = {attempts:0, correct:0};
+    progress[id].attempts++;
+    if (correct) progress[id].correct++;
+    streak = correct ? streak+1 : 0;
+    saveData();
+    renderProgressPanel();
+  }
+
+  // ---------- Rendering: tabs & filters ----------
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      render();
+    });
+  });
+  document.querySelectorAll('.chip[data-script]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.chip[data-script]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      settings.script = btn.dataset.script;
+      saveData();
+      render();
+    });
+  });
+  document.querySelectorAll('.chip[data-tier]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('active');
+      settings[btn.dataset.tier] = btn.classList.contains('active');
+      saveData();
+      render();
+    });
+  });
+  document.getElementById('resetBtn').addEventListener('click', async () => {
+    if (!confirm('Erase all saved kana progress? This cannot be undone.')) return;
+    progress = {};
+    streak = 0;
+    await saveData();
+    render();
+  });
+
+  // ---------- Study mode ----------
+  function renderStudy(){
+    const deck = activeDeck();
+    stage.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'study-grid';
+    deck.forEach(card => {
+      const cell = document.createElement('div');
+      cell.className = 'flashcard';
+      const comboClass = card.glyph.length > 1 ? 'is-combo' : '';
+      cell.innerHTML = `
+        <div class="flashcard-inner">
+          <div class="flashcard-face front square"><div class="glyph ${comboClass}">${card.glyph}</div></div>
+          <div class="flashcard-face back square"><div class="romaji">${card.romaji}</div></div>
+        </div>`;
+      cell.addEventListener('click', () => cell.classList.toggle('flipped'));
+      grid.appendChild(cell);
+    });
+    stage.appendChild(grid);
+  }
+
+  // ---------- Quiz mode ----------
+  function newQuestion(){
+    const deck = activeDeck();
+    currentCard = pickCard(deck);
+    lastCardId = currentCard.id;
+    awaitingNext = false;
+    renderQuiz(deck);
+  }
+
+  function renderQuiz(deck){
+    deck = deck || activeDeck();
+    stage.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'quiz-wrap';
+
+    const modeToggle = document.createElement('div');
+    modeToggle.className = 'quiz-mode-toggle';
+    modeToggle.innerHTML = `
+      <button class="chip ${quizInputMode==='choice'?'active':''}" id="modeChoice">Multiple choice</button>
+      <button class="chip ${quizInputMode==='type'?'active':''}" id="modeType">Type romaji</button>`;
+    wrap.appendChild(modeToggle);
+
+    const qSquare = document.createElement('div');
+    qSquare.className = 'square quiz-square';
+    qSquare.style.position = 'relative';
+    const quizComboClass = currentCard.glyph.length > 1 ? 'is-combo' : '';
+    qSquare.innerHTML = `<div class="glyph ${quizComboClass}">${currentCard.glyph}</div>`;
+    wrap.appendChild(qSquare);
+
+    const feedback = document.createElement('div');
+    feedback.className = 'feedback-line';
+    feedback.id = 'feedbackLine';
+
+    if (quizInputMode === 'choice'){
+      const distractPool = deck.filter(c => c.romaji !== currentCard.romaji && c.id !== currentCard.id);
+      shuffle(distractPool);
+      const options = [currentCard, ...distractPool.slice(0,3)];
+      shuffle(options);
+      const choices = document.createElement('div');
+      choices.className = 'choices';
+      options.forEach(opt => {
+        const b = document.createElement('button');
+        b.className = 'choice-btn';
+        b.textContent = opt.romaji;
+        b.addEventListener('click', () => handleChoice(b, opt, choices));
+        choices.appendChild(b);
+      });
+      wrap.appendChild(choices);
+    } else {
+      const row = document.createElement('div');
+      row.className = 'type-row';
+      row.innerHTML = `<input type="text" id="typeInput" placeholder="type the romaji…" autocomplete="off" autocapitalize="off" spellcheck="false"><button id="typeSubmit">Check</button>`;
+      wrap.appendChild(row);
+    }
+
+    wrap.appendChild(feedback);
+
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'next-btn';
+    nextBtn.textContent = 'Next →';
+    nextBtn.style.visibility = 'hidden';
+    nextBtn.id = 'nextBtn';
+    nextBtn.addEventListener('click', newQuestion);
+    wrap.appendChild(nextBtn);
+
+    stage.appendChild(wrap);
+
+    document.getElementById('modeChoice').addEventListener('click', () => { quizInputMode='choice'; renderQuiz(deck); });
+    document.getElementById('modeType').addEventListener('click', () => { quizInputMode='type'; renderQuiz(deck); });
+
+    if (quizInputMode === 'type'){
+      const input = document.getElementById('typeInput');
+      const submit = document.getElementById('typeSubmit');
+      input.focus();
+      const doCheck = () => handleType(input.value, qSquare, feedback);
+      submit.addEventListener('click', doCheck);
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') doCheck(); });
+    }
+  }
+
+  function markSquare(square, correct){
+    const mark = document.createElement('div');
+    mark.className = 'quiz-mark ' + (correct ? 'correct' : 'wrong');
+    mark.textContent = correct ? '○' : '✕';
+    square.appendChild(mark);
+  }
+
+  function handleChoice(btn, opt, choicesEl){
+    if (awaitingNext) return;
+    awaitingNext = true;
+    const correct = opt.id === currentCard.id;
+    Array.from(choicesEl.children).forEach(b => {
+      b.disabled = true;
+      if (b.textContent === currentCard.romaji) b.classList.add('correct');
+    });
+    if (!correct) btn.classList.add('wrong');
+    document.querySelector('.quiz-square').style.position = 'relative';
+    markSquare(document.querySelector('.quiz-square'), correct);
+    const fb = document.getElementById('feedbackLine');
+    fb.textContent = correct ? 'Nice — that\'s right.' : `Correct answer: ${currentCard.romaji}`;
+    fb.className = 'feedback-line ' + (correct ? 'correct-text' : 'wrong-text');
+    recordAnswer(currentCard.id, correct);
+    document.getElementById('nextBtn').style.visibility = 'visible';
+  }
+
+  function handleType(value, square, feedback){
+    if (awaitingNext) return;
+    const norm = (value||'').trim().toLowerCase();
+    const romaji = currentCard.romaji;
+    const alts = ALT[romaji] || [];
+    const correct = norm === romaji || alts.includes(norm);
+    awaitingNext = true;
+    markSquare(square, correct);
+    feedback.textContent = correct ? 'Nice — that\'s right.' : `Correct answer: ${romaji}`;
+    feedback.className = 'feedback-line ' + (correct ? 'correct-text' : 'wrong-text');
+    document.getElementById('typeInput').disabled = true;
+    document.getElementById('typeSubmit').disabled = true;
+    recordAnswer(currentCard.id, correct);
+    document.getElementById('nextBtn').style.visibility = 'visible';
+  }
+
+  function shuffle(arr){
+    for (let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]] = [arr[j],arr[i]];
+    }
+  }
+
+  // ---------- Progress panel ----------
+  function renderProgressPanel(){
+    const deck = activeDeck();
+    let masteredCount = 0, totalAttempts = 0, totalCorrect = 0;
+    masteryGrid.innerHTML = '';
+    deck.forEach(card => {
+      const s = progress[card.id];
+      const cell = document.createElement('div');
+      cell.className = 'mastery-cell';
+      cell.title = card.glyph + '  (' + card.romaji + ')' + (s ? '  —  ' + s.correct + '/' + s.attempts : '  —  not tried yet');
+      if (s && s.attempts){
+        totalAttempts += s.attempts;
+        totalCorrect += s.correct;
+        const acc = s.correct/s.attempts;
+        if (s.attempts >= 3 && acc >= 0.8){
+          masteredCount++;
+          cell.style.background = 'var(--ai-deep)';
+          cell.style.borderColor = 'var(--ai-deep)';
+        } else if (acc < 0.5 && s.attempts >= 2){
+          cell.style.background = 'rgba(178,58,46,0.35)';
+        } else {
+          const t = Math.min(1, acc);
+          cell.style.background = `rgba(31,58,92,${0.15+t*0.4})`;
+        }
+      }
+      masteryGrid.appendChild(cell);
+    });
+    document.getElementById('statMastered').textContent = masteredCount + ' / ' + deck.length;
+    document.getElementById('statAccuracy').textContent = totalAttempts ? Math.round(100*totalCorrect/totalAttempts) + '%' : '—';
+    document.getElementById('statStreak').textContent = streak;
+  }
+
+  // ---------- Root render ----------
+  function render(){
+    if (mode === 'study') renderStudy();
+    else newQuestion();
+    renderProgressPanel();
+  }
+
+  function applySettingsToUI(){
+    document.querySelectorAll('.chip[data-script]').forEach(b => {
+      b.classList.toggle('active', b.dataset.script === settings.script);
+    });
+    document.querySelectorAll('.chip[data-tier]').forEach(b => {
+      b.classList.toggle('active', !!settings[b.dataset.tier]);
+    });
+  }
+
+  // ---------- Init ----------
+  loadData().then(() => {
+    applySettingsToUI();
+    render();
+  });
+})();
+</script>
+</body>
+</html>
